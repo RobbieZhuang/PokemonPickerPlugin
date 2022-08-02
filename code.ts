@@ -2,6 +2,9 @@
 // You can access browser APIs such as the network by creating a UI which contains
 // a full browser environment (see documentation).
 
+const cardWidth = 630;
+const cardHeight = 880;
+
 // Runs this code if the plugin is run in Figma
 if (figma.editorType === "figma") {
   // This plugin will open a window to prompt the user to enter a number, and
@@ -46,6 +49,13 @@ if (figma.editorType === "figma") {
   // callback. The callback will be passed the "pluginMessage" property of the
   // posted message.
   figma.ui.onmessage = (msg) => {
+    if (msg.type === "zoomRequest") {
+      figma.ui.postMessage({
+        zoom: figma.viewport.zoom,
+        size: [cardWidth, cardHeight],
+      });
+    }
+
     if (msg.type === "card") {
       console.log("connection!");
 
@@ -56,8 +66,9 @@ if (figma.editorType === "figma") {
         imageHash: image.hash,
       };
       const shape = figma.createRectangle();
-      shape.resize(630, 880);
-
+      shape.resize(cardWidth, cardHeight);
+      shape.x = figma.viewport.center.x - cardWidth / 2;
+      shape.y = figma.viewport.center.y - cardHeight / 2;
       const newFills = [];
       newFills.push(newPaint);
       shape.fills = newFills;
@@ -65,11 +76,38 @@ if (figma.editorType === "figma") {
       figma.currentPage.appendChild(shape);
 
       figma.currentPage.selection = [shape];
-      figma.viewport.scrollAndZoomIntoView([shape]);
+      // figma.viewport.scrollAndZoomIntoView([shape]);
+    }
+
+    if (msg.type === "cardDrag") {
+      console.log("connection drag!");
+
+      const image = figma.createImage(new Uint8Array(msg.data));
+      const newPaint = {
+        type: "IMAGE",
+        scaleMode: "FIT",
+        imageHash: image.hash,
+      };
+      const shape = figma.createRectangle();
+      shape.resize(cardWidth, cardHeight);
+
+      shape.x =
+        figma.viewport.bounds.x +
+        (msg.pos[0] - msg.pointer[0]) / figma.viewport.zoom;
+      shape.y =
+        figma.viewport.bounds.y +
+        (msg.pos[1] - msg.pointer[1] - 48) / figma.viewport.zoom;
+      const newFills = [];
+      newFills.push(newPaint);
+      shape.fills = newFills;
+
+      figma.currentPage.appendChild(shape);
+
+      figma.currentPage.selection = [shape];
     }
 
     // Make sure to close the plugin when you're done. Otherwise the plugin will
     // keep running, which shows the cancel button at the bottom of the screen.
-    figma.closePlugin();
+    // figma.closePlugin();
   };
 }
