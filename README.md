@@ -1,3 +1,8 @@
+
+
+https://user-images.githubusercontent.com/14525856/182072112-e98f36df-0012-4017-9d62-5f826dec0b8f.mp4
+
+
 Below are the steps to get your plugin running. You can also find instructions at:
 
   https://www.figma.com/plugin-docs/setup/
