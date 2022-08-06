@@ -2,10 +2,10 @@
   "name": "PokemonPicker",
   "id": "1134711340898147456",
   "api": "1.0.0",
-  "main": "code.js",
+  "main": "dist/code.js",
+  "ui": "dist/ui.html",
   "editorType": [
     "figma",
     "figjam"
-  ],
-  "ui": "ui.html"
+  ]
 }
