@@ -25,13 +25,10 @@
 <div class="window">
   <div id="searchBar">
     <input type="text" id="pokemonQuery" />
-    <input type="submit" id="searchButton" value="Search" />
     <label id="searchStatus"></label>
   </div>
   <div id="results"></div>
-  <!-- <p>Count: <input id="count" type="number" value="5"></p> -->
   <button id="insertChewtle">Insert Grass Energy</button>
-  <!-- <button id="cancel">Cancel</button> -->
 </div>
 <script>
   document.getElementById("pokemonQuery").focus();
@@ -40,10 +37,6 @@
     if (k.keyCode === 13) {
       await searchCards();
     }
-  };
-
-  document.getElementById("searchButton").onclick = async () => {
-    await searchCards();
   };
 
   document.getElementById("insertChewtle").onclick = async () => {
