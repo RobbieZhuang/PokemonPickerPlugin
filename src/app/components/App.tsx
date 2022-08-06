@@ -3,15 +3,16 @@ import '../styles/ui.css';
 import {getCardImageForFigma, getCardImage} from '../utils/cardImages';
 
 async function searchCards(cardName: string) {
-    const response = await fetch('https://api.pokemontcg.io/v2/cards?q=name:' + cardName, {method: 'GET'});
+    const response = await fetch(`https://api.pokemontcg.io/v2/cards?q=name:"${cardName}*"`, {method: 'GET'});
 
     // todo: display error message if response is not ok
-    if (response.status != 200) {
+    if (response.status != 200 || response.ok === false) {
         console.log('Error: ' + response);
         return [];
     }
-
     const data = await response.json();
+    console.log('response', response);
+    console.log('No Error', data);
     return data.data.map((card) => {
         return {
             cardId: card.id,
@@ -36,7 +37,7 @@ function CardThumbnailDragged(cardImg, width, height): Element {
     div.appendChild(img);
     div.style.position = 'absolute';
     div.style.top = '0px';
-    div.style.left = '-500px';
+    div.style.left = '-10000px';
 
     document.querySelector('body').appendChild(div);
 
@@ -101,6 +102,7 @@ const App = ({}) => {
     const [canvasZoomLevel, setCanvasZoomLevel] = React.useState(0);
     const [canvasCardWidth, setCanvasCardWidth] = React.useState(0);
     const [canvasCardHeight, setCanvasCardHeight] = React.useState(0);
+    const [statusMessage, setStatusMessage] = React.useState('');
 
     const [query, setQuery] = React.useState('');
 
@@ -108,6 +110,7 @@ const App = ({}) => {
         if (k.keyCode === 13) {
             const results = await searchCards(query);
             setCardInfos(() => results);
+            setCardsLoaded(0);
         }
     };
 
@@ -121,6 +124,18 @@ const App = ({}) => {
         };
     }, []);
 
+    React.useEffect(() => {
+        if (cardInfos.length === 0) {
+            setStatusMessage('No results found.');
+        } else {
+            setStatusMessage(`${cardsLoaded} out of ${cardInfos.length} cards loaded.`);
+        }
+    }, [cardInfos, cardsLoaded]);
+
+    React.useEffect(() => {
+        setStatusMessage("Drag'n'Drop a card to the canvas to add it to the deck");
+    }, []);
+
     const onMouseEnter = () => {
         // Get current zoom level on the screen
         window.parent.postMessage({pluginMessage: {type: 'zoomRequest'}}, '*');
@@ -129,31 +144,37 @@ const App = ({}) => {
     // todo: make chewtle button more awesome
     return (
         <div className="window" onMouseEnter={onMouseEnter}>
-            <div id="searchBar">
-                <input
-                    autoFocus
-                    type="text"
-                    value={query}
-                    onChange={(e) => setQuery(e.target.value)}
-                    onKeyUp={enterSearch}
-                />
-                <label id="searchStatus">{cardsLoaded + '/' + cardInfos.length}</label>
+            <input
+                autoFocus
+                className="searchInput"
+                type="text"
+                value={query}
+                placeholder="Search card names"
+                onChange={(e) => setQuery(e.target.value)}
+                onKeyUp={enterSearch}
+            ></input>
+            <div id="searchStatus">
+                <label>{statusMessage}</label>
             </div>
             <div id="results">
                 {cardInfos.map((card) => (
-                    <CardThumbnail
-                        card={card}
-                        canvasZoomLevel={canvasZoomLevel}
-                        canvasCardWidth={canvasCardWidth}
-                        canvasCardHeight={canvasCardHeight}
-                        cardsLoaded={cardsLoaded}
-                        setCardsLoaded={setCardsLoaded}
-                    />
+                    <React.Fragment key={card.cardId}>
+                        <CardThumbnail
+                            card={card}
+                            canvasZoomLevel={canvasZoomLevel}
+                            canvasCardWidth={canvasCardWidth}
+                            canvasCardHeight={canvasCardHeight}
+                            cardsLoaded={cardsLoaded}
+                            setCardsLoaded={setCardsLoaded}
+                        />
+                    </React.Fragment>
                 ))}
             </div>
-            <button id="insertChewtle" onClick={insertChewtle}>
-                Insert Grass Energy
-            </button>
+            <div id="chewtleDiv">
+                <button id="insertChewtle" onClick={insertChewtle}>
+                    Insert Grass Energy
+                </button>
+            </div>
         </div>
     );
 };
