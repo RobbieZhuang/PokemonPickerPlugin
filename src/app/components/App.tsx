@@ -5,7 +5,7 @@ import SquareLoader from 'react-spinners/SquareLoader';
 import {searchCards} from '../utils/cardQueries';
 
 const insertChewtle = async () => {
-    const image = await getCardImageForFigma('https://images.pokemontcg.io/swsh45/26_hires.png');
+    const image = await getCardImageForFigma('https://images.pokemontcg.io/swsh4/38_hires.png');
     window.parent.postMessage({pluginMessage: {type: 'card', data: image}}, '*');
 };
 
@@ -37,6 +37,7 @@ const CardThumbnail = ({
     setDroppedInIFrame,
 }) => {
     const [loadedSrc, setLoadedSrc] = React.useState(null);
+    const [isDragging, setIsDragging] = React.useState(false);
 
     React.useEffect(() => {
         const fetchImage = async () => {
@@ -53,6 +54,7 @@ const CardThumbnail = ({
     }, [loadedSrc]);
 
     const onClick = async () => {
+        console.log(card);
         window.parent.postMessage(
             {
                 pluginMessage: {
@@ -66,12 +68,14 @@ const CardThumbnail = ({
 
     const onDragStart = async (e) => {
         setDroppedInIFrame(false);
+        setIsDragging(true);
         const width = canvasCardWidth * canvasZoomLevel;
         const height = canvasCardHeight * canvasZoomLevel;
         e.dataTransfer.setDragImage(CardThumbnailDragged(loadedSrc, width, height), width / 2, height / 2);
     };
 
     const onDragEnd = async (e) => {
+        setIsDragging(false);
         if (droppedInIFrame) {
             return;
         }
@@ -88,7 +92,13 @@ const CardThumbnail = ({
     };
 
     return (
-        <img className="thumbnail" src={loadedSrc} onClick={onClick} onDragStart={onDragStart} onDragEnd={onDragEnd} />
+        <img
+            className={`thumbnail ${isDragging ? 'thumbnailDrag' : ''}`}
+            src={loadedSrc}
+            onClick={onClick}
+            onDragStart={onDragStart}
+            onDragEnd={onDragEnd}
+        />
     );
 };
 
@@ -131,17 +141,15 @@ const App = ({}) => {
 
     React.useEffect(() => {
         if (showChewtle) {
-            setQuery('leaf energy');
+            setQuery('grass energy');
             setStatusMessage('');
         } else if (cardInfos.length === 0) {
-            setStatusMessage('No results found.');
-        } else {
-            setStatusMessage(`${cardsLoaded} out of ${cardInfos.length} cards loaded`);
+            setStatusMessage('No results found');
         }
     }, [cardInfos, cardsLoaded, showChewtle]);
 
     React.useEffect(() => {
-        setStatusMessage('Drag and drop a card to the canvas');
+        setStatusMessage('');
     }, []);
 
     const onClick = (e) => {
@@ -154,9 +162,9 @@ const App = ({}) => {
         // Get current zoom level on the screen
         window.parent.postMessage({pluginMessage: {type: 'zoomRequest'}}, '*');
     };
-
     return (
         <div
+            className="window"
             onDragOver={(e) => {
                 e.dataTransfer.dropEffect = 'move';
                 e.preventDefault();
@@ -164,28 +172,28 @@ const App = ({}) => {
             onDrop={() => {
                 setDroppedInIFrame(true);
             }}
-            className="window"
             ref={windowRef}
             onMouseEnter={onMouseEnter}
         >
-            <input
-                autoFocus
-                className="searchInput"
-                type="text"
-                value={query}
-                placeholder="Search card names"
-                onChange={(e) => setQuery(e.target.value)}
-                onKeyUp={enterSearch}
-                onClick={onClick}
-            ></input>
-            <div className="searchStatus">
-                <label>{statusMessage}</label>
+            <div className="search">
+                <input
+                    autoFocus
+                    className="searchInput"
+                    type="text"
+                    value={query}
+                    placeholder="Search card name"
+                    onChange={(e) => setQuery(e.target.value)}
+                    onKeyUp={enterSearch}
+                    onClick={onClick}
+                ></input>
             </div>
             {!showChewtle ? (
                 loading ? (
                     <div className="loading">
                         <SquareLoader color="#b3b3b3" size={24} />
                     </div>
+                ) : cardInfos.length === 0 ? (
+                    <div className="error">{statusMessage}</div>
                 ) : (
                     <div className="results">
                         {cardInfos.map((card) => (
@@ -205,7 +213,7 @@ const App = ({}) => {
                     </div>
                 )
             ) : (
-                <div style={{display: `${showChewtle ? 'block' : 'none'}`}} className="chewtleDiv">
+                <div className={`chewtleDiv ${showChewtle ? '' : 'hide'}`}>
                     <button className="chewtleButton" onClick={insertChewtle} />
                 </div>
             )}

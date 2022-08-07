@@ -7,23 +7,34 @@ body {
     text-align: center;
     margin: 0px;
 }
+/* body::-webkit-scrollbar {
+    display: none;
+} */
 
 .window {
     display: flex;
     flex-direction: column;
     align-items: stretch;
-    padding: var(--padding-size);
 }
 
+.search {
+    position: sticky;
+    top: 0px;
+    padding: var(--padding-size);
+    background-color: white;
+    border-bottom: 1px solid #b3b3b3;
+    margin-bottom: -1px;
+}
 .searchInput {
     padding-left: 32px;
     background: url('/public/search.svg') no-repeat left;
     background-size: 32px;
     height: 40px;
+    width: 100%;
     border: 1px solid #b3b3b3;
     border-radius: 4px;
     font: 400 14px Inter, sans-serif;
-    margin-bottom: calc(var(--padding-size) / 2);
+    /* margin-bottom: calc(var(--padding-size) / 2); */
 }
 .searchInput:focus {
     outline: none;
@@ -32,14 +43,23 @@ body {
 .searchStatus {
     display: flex;
     justify-content: flex-start;
-    margin-bottom: calc(var(--padding-size) / 2);
+    margin-top: var(--padding-size);
+    margin-left: var(--padding-size);
 }
 
 .results {
     display: grid;
-    width: 100%;
-    grid-template-columns: auto auto auto;
-    grid-gap: 8px;
+    width: 451px;
+    grid-template-columns: repeat(3, minmax(0px, 140px));
+    grid-gap: 16px;
+    margin: calc(var(--padding-size));
+}
+.error {
+    display: block;
+    margin: calc(var(--padding-size) * 12) 0px;
+    justify-content: center;
+    font: 300 24px Inter, sans-serif;
+    color: #b3b3b3;
 }
 .loading {
     width: 100%;
@@ -47,28 +67,31 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    margin: calc(var(--padding-size) * 10) 0px;
+    margin: calc(var(--padding-size) * 12) 0px;
 }
 .thumbnail {
     height: auto;
-    width: 144px;
-    transition-duration: 0.2s;
+    width: 140px;
+    transition-duration: 0.1s;
 }
 .thumbnail:hover {
     border-radius: 8px;
     box-shadow: 0px 3px 8px rgba(0, 0, 0, 0.1), 0px 1px 3px rgba(0, 0, 0, 0.1), 0px 2px 14px rgba(0, 0, 0, 0.15);
 }
 .thumbnail:active {
-    transform: scale(1.03);
+    transform: scale(1.05);
+}
+.thumbnailDrag {
+    opacity: 0;
 }
 
 .chewtleDiv {
-    display: flex;
+    display: block;
     justify-content: center;
 }
 .chewtleButton {
     background-color: #61cbfb;
-    background: url('/public/chewtle.png') no-repeat scroll 0 0 transparent;
+    background: url('/public/chewtle-big.png') no-repeat scroll 0 0 transparent;
     border-radius: 4px;
     color: white;
     border: none;
@@ -76,10 +99,10 @@ body {
     box-shadow: none;
     margin: 0 5px;
     padding: 8px 16px;
-    height: 32px;
-    width: 148px;
-    margin: calc(var(--padding-size) * 10) 0px;
-    transition-duration: 0.2s;
+    width: 258px;
+    height: 152px;
+    margin: calc(var(--padding-size) * 8) 0px;
+    transition-duration: 0.1s;
 }
 .showingResults {
     margin: 0px;
@@ -88,7 +111,7 @@ body {
     box-shadow: 0px 3px 8px rgba(0, 0, 0, 0.1), 0px 1px 3px rgba(0, 0, 0, 0.1), 0px 2px 14px rgba(0, 0, 0, 0.15);
 }
 .chewtleButton:active {
-    transform: scale(0.97);
+    transform: scale(0.95);
 }
 .hide {
     display: none;
