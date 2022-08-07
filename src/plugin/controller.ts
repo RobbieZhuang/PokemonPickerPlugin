@@ -2,7 +2,7 @@ const cardWidth = 630;
 const cardHeight = 880;
 
 figma.showUI(__html__);
-figma.ui.resize(500, 500);
+figma.ui.resize(500, 512);
 
 function addCardToCanvas(msg, x, y) {
     const image = figma.createImage(new Uint8Array(msg.data));

@@ -1,24 +1,8 @@
 import * as React from 'react';
 import '../styles/ui.css';
 import {getCardImageForFigma, getCardImage} from '../utils/cardImages';
-
-async function searchCards(cardName: string) {
-    const response = await fetch(`https://api.pokemontcg.io/v2/cards?q=name:"${cardName}*"`, {method: 'GET'});
-
-    // todo: display error message if response is not ok
-    if (response.status != 200 || response.ok === false) {
-        console.log('Error: ' + response);
-        return [];
-    }
-    const data = await response.json();
-    return data.data.map((card) => {
-        return {
-            cardId: card.id,
-            smallUrl: card.images.small,
-            largeUrl: card.images.large,
-        };
-    });
-}
+import SquareLoader from 'react-spinners/SquareLoader';
+import {searchCards} from '../utils/cardQueries';
 
 const insertChewtle = async () => {
     const image = await getCardImageForFigma('https://images.pokemontcg.io/swsh45/26_hires.png');
@@ -115,26 +99,28 @@ const App = ({}) => {
     const [canvasCardWidth, setCanvasCardWidth] = React.useState(0);
     const [canvasCardHeight, setCanvasCardHeight] = React.useState(0);
     const [statusMessage, setStatusMessage] = React.useState('');
+    const [loading, setLoading] = React.useState(false);
     const [droppedInIFrame, setDroppedInIFrame] = React.useState(false);
     const [showChewtle, setShowChewtle] = React.useState(false);
+    const [query, setQuery] = React.useState('');
 
     const windowRef = React.useRef();
-
-    const [query, setQuery] = React.useState('');
 
     const enterSearch = async (k) => {
         if (k.keyCode === 13) {
             var results = [];
+            setShowChewtle(false);
+            setLoading(true);
             if (query.trim().length !== 0) {
                 results = await searchCards(query.trim());
             }
             setCardInfos(() => results);
             setCardsLoaded(0);
+            setLoading(false);
         }
     };
 
     React.useEffect(() => {
-        // Read messages sent from the plugin controller
         window.onmessage = (event) => {
             const {zoom, size} = event.data.pluginMessage;
             setCanvasZoomLevel(zoom);
@@ -144,15 +130,18 @@ const App = ({}) => {
     }, []);
 
     React.useEffect(() => {
-        if (cardInfos.length === 0) {
+        if (showChewtle) {
+            setQuery('leaf energy');
+            setStatusMessage('');
+        } else if (cardInfos.length === 0) {
             setStatusMessage('No results found.');
         } else {
-            setStatusMessage(`${cardsLoaded} out of ${cardInfos.length} cards loaded.`);
+            setStatusMessage(`${cardsLoaded} out of ${cardInfos.length} cards loaded`);
         }
-    }, [cardInfos, cardsLoaded]);
+    }, [cardInfos, cardsLoaded, showChewtle]);
 
     React.useEffect(() => {
-        setStatusMessage("Drag'n'Drop a card to the canvas");
+        setStatusMessage('Drag and drop a card to the canvas');
     }, []);
 
     const onClick = (e) => {
@@ -166,7 +155,6 @@ const App = ({}) => {
         window.parent.postMessage({pluginMessage: {type: 'zoomRequest'}}, '*');
     };
 
-    // todo: make chewtle button more awesome
     return (
         <div
             onDragOver={(e) => {
@@ -190,28 +178,37 @@ const App = ({}) => {
                 onKeyUp={enterSearch}
                 onClick={onClick}
             ></input>
-            {/* <div id="searchStatus">
+            <div className="searchStatus">
                 <label>{statusMessage}</label>
-            </div> */}
-            <div id="results">
-                {cardInfos.map((card) => (
-                    <React.Fragment key={card.cardId}>
-                        <CardThumbnail
-                            card={card}
-                            canvasZoomLevel={canvasZoomLevel}
-                            canvasCardWidth={canvasCardWidth}
-                            canvasCardHeight={canvasCardHeight}
-                            cardsLoaded={cardsLoaded}
-                            setCardsLoaded={setCardsLoaded}
-                            droppedInIFrame={droppedInIFrame}
-                            setDroppedInIFrame={setDroppedInIFrame}
-                        />
-                    </React.Fragment>
-                ))}
             </div>
-            <div style={{display: `${showChewtle ? 'block' : 'none'}`}} id="chewtleDiv">
-                <button id="insertChewtle" onClick={insertChewtle} />
-            </div>
+            {!showChewtle ? (
+                loading ? (
+                    <div className="loading">
+                        <SquareLoader color="#b3b3b3" size={24} />
+                    </div>
+                ) : (
+                    <div className="results">
+                        {cardInfos.map((card) => (
+                            <React.Fragment key={card.cardId}>
+                                <CardThumbnail
+                                    card={card}
+                                    canvasZoomLevel={canvasZoomLevel}
+                                    canvasCardWidth={canvasCardWidth}
+                                    canvasCardHeight={canvasCardHeight}
+                                    cardsLoaded={cardsLoaded}
+                                    setCardsLoaded={setCardsLoaded}
+                                    droppedInIFrame={droppedInIFrame}
+                                    setDroppedInIFrame={setDroppedInIFrame}
+                                />
+                            </React.Fragment>
+                        ))}
+                    </div>
+                )
+            ) : (
+                <div style={{display: `${showChewtle ? 'block' : 'none'}`}} className="chewtleDiv">
+                    <button className="chewtleButton" onClick={insertChewtle} />
+                </div>
+            )}
         </div>
     );
 };
