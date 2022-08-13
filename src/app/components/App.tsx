@@ -40,11 +40,15 @@ const CardThumbnail = ({
     const [isDragging, setIsDragging] = React.useState(false);
 
     React.useEffect(() => {
+        const controller = new AbortController();
         const fetchImage = async () => {
-            const imageObjectUrl = await getCardImage(card.smallUrl);
+            const imageObjectUrl = await getCardImage(new Request(card.smallUrl, {signal: controller.signal}));
             setLoadedSrc(imageObjectUrl);
         };
         fetchImage();
+        return () => {
+            controller.abort();
+        };
     }, [card]);
 
     React.useEffect(() => {
@@ -54,7 +58,6 @@ const CardThumbnail = ({
     }, [loadedSrc]);
 
     const onClick = async () => {
-        console.log(card);
         window.parent.postMessage(
             {
                 pluginMessage: {
@@ -71,6 +74,7 @@ const CardThumbnail = ({
         setIsDragging(true);
         const width = canvasCardWidth * canvasZoomLevel;
         const height = canvasCardHeight * canvasZoomLevel;
+        // loadedSrc depends on the cache being enabled
         e.dataTransfer.setDragImage(CardThumbnailDragged(loadedSrc, width, height), width / 2, height / 2);
     };
 
