@@ -9,21 +9,12 @@ const insertChewtle = async () => {
     window.parent.postMessage({pluginMessage: {type: 'card', data: image}}, '*');
 };
 
-function CardThumbnailDragged(cardImg, width, height): Element {
-    const img = document.createElement('img');
-    img.src = cardImg;
-    img.style.width = `${width}px`;
-    img.style.height = `${height}px`;
+function CardThumbnailDragged(cardImg, width, height, draggedThumbnailImage): Element {
+    draggedThumbnailImage.src = cardImg;
+    draggedThumbnailImage.style.width = `${width}px`;
+    draggedThumbnailImage.style.height = `${height}px`;
 
-    const div = document.createElement('div');
-    div.appendChild(img);
-    div.style.position = 'absolute';
-    div.style.top = '0px';
-    div.style.left = '-1000000px';
-
-    document.querySelector('body').appendChild(div);
-
-    return div;
+    return draggedThumbnailImage.parentNode;
 }
 
 const CardThumbnail = ({
@@ -35,6 +26,7 @@ const CardThumbnail = ({
     setCardsLoaded,
     droppedInIFrame,
     setDroppedInIFrame,
+    draggedThumbnailRef,
 }) => {
     const [loadedSrc, setLoadedSrc] = React.useState(null);
     const [isDragging, setIsDragging] = React.useState(false);
@@ -75,7 +67,11 @@ const CardThumbnail = ({
         const width = canvasCardWidth * canvasZoomLevel;
         const height = canvasCardHeight * canvasZoomLevel;
         // loadedSrc depends on the cache being enabled
-        e.dataTransfer.setDragImage(CardThumbnailDragged(loadedSrc, width, height), width / 2, height / 2);
+        e.dataTransfer.setDragImage(
+            CardThumbnailDragged(loadedSrc, width, height, draggedThumbnailRef.current),
+            width / 2,
+            height / 2
+        );
     };
 
     const onDragEnd = async (e) => {
@@ -119,6 +115,7 @@ const App = ({}) => {
     const [query, setQuery] = React.useState('');
 
     const windowRef = React.useRef();
+    const draggedThumbnailImgRef = React.useRef();
 
     const enterSearch = async (k) => {
         if (k.keyCode === 13) {
@@ -167,61 +164,67 @@ const App = ({}) => {
         window.parent.postMessage({pluginMessage: {type: 'zoomRequest'}}, '*');
     };
     return (
-        <div
-            className="window"
-            onDragOver={(e) => {
-                e.dataTransfer.dropEffect = 'move';
-                e.preventDefault();
-            }}
-            onDrop={() => {
-                setDroppedInIFrame(true);
-            }}
-            ref={windowRef}
-            onMouseEnter={onMouseEnter}
-        >
-            <div className="search">
-                <input
-                    autoFocus
-                    className="searchInput"
-                    type="text"
-                    value={query}
-                    placeholder="Search card name"
-                    onChange={(e) => setQuery(e.target.value)}
-                    onKeyUp={enterSearch}
-                    onClick={onClick}
-                ></input>
-            </div>
-            {!showChewtle ? (
-                loading ? (
-                    <div className="loading">
-                        <SquareLoader color="#b3b3b3" size={24} />
-                    </div>
-                ) : cardInfos.length === 0 ? (
-                    <div className="error">{statusMessage}</div>
-                ) : (
-                    <div className="results">
-                        {cardInfos.map((card) => (
-                            <React.Fragment key={card.cardId}>
-                                <CardThumbnail
-                                    card={card}
-                                    canvasZoomLevel={canvasZoomLevel}
-                                    canvasCardWidth={canvasCardWidth}
-                                    canvasCardHeight={canvasCardHeight}
-                                    cardsLoaded={cardsLoaded}
-                                    setCardsLoaded={setCardsLoaded}
-                                    droppedInIFrame={droppedInIFrame}
-                                    setDroppedInIFrame={setDroppedInIFrame}
-                                />
-                            </React.Fragment>
-                        ))}
-                    </div>
-                )
-            ) : (
-                <div className={`chewtleDiv ${showChewtle ? '' : 'hide'}`}>
-                    <button className="chewtleButton" onClick={insertChewtle} />
+        <>
+            <div
+                className="window"
+                onDragOver={(e) => {
+                    e.dataTransfer.dropEffect = 'move';
+                    e.preventDefault();
+                }}
+                onDrop={() => {
+                    setDroppedInIFrame(true);
+                }}
+                ref={windowRef}
+                onMouseEnter={onMouseEnter}
+            >
+                <div className="search">
+                    <input
+                        autoFocus
+                        className="searchInput"
+                        type="text"
+                        value={query}
+                        placeholder="Search card name"
+                        onChange={(e) => setQuery(e.target.value)}
+                        onKeyUp={enterSearch}
+                        onClick={onClick}
+                    ></input>
                 </div>
-            )}
-        </div>
+                {!showChewtle ? (
+                    loading ? (
+                        <div className="loading">
+                            <SquareLoader color="#b3b3b3" size={24} />
+                        </div>
+                    ) : cardInfos.length === 0 ? (
+                        <div className="error">{statusMessage}</div>
+                    ) : (
+                        <div className="results">
+                            {cardInfos.map((card) => (
+                                <React.Fragment key={card.cardId}>
+                                    <CardThumbnail
+                                        card={card}
+                                        canvasZoomLevel={canvasZoomLevel}
+                                        canvasCardWidth={canvasCardWidth}
+                                        canvasCardHeight={canvasCardHeight}
+                                        cardsLoaded={cardsLoaded}
+                                        setCardsLoaded={setCardsLoaded}
+                                        droppedInIFrame={droppedInIFrame}
+                                        setDroppedInIFrame={setDroppedInIFrame}
+                                        draggedThumbnailRef={draggedThumbnailImgRef}
+                                    />
+                                </React.Fragment>
+                            ))}
+                        </div>
+                    )
+                ) : (
+                    <div className={`chewtleDiv ${showChewtle ? '' : 'hide'}`}>
+                        <button className="chewtleButton" onClick={insertChewtle} />
+                    </div>
+                )}
+            </div>
+            <div id="draggedThumbnail">
+                <img id="draggedThumbnailImg" ref={draggedThumbnailImgRef}></img>
+            </div>
+        </>
     );
 };
 
