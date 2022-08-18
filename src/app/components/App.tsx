@@ -3,6 +3,7 @@ import '../styles/ui.css';
 import {getCardImageForFigma, getCardImage} from '../utils/cardImages';
 import SquareLoader from 'react-spinners/SquareLoader';
 import {searchCards} from '../utils/cardQueries';
+import { dragPosition } from '../utils/shared';
 
 const insertChewtle = async () => {
     const image = await getCardImageForFigma('https://images.pokemontcg.io/swsh4/38_hires.png');
@@ -67,10 +68,11 @@ const CardThumbnail = ({
         const width = canvasCardWidth * canvasZoomLevel;
         const height = canvasCardHeight * canvasZoomLevel;
         // loadedSrc depends on the cache being enabled
+        const dragPos = dragPosition(width, height);
         e.dataTransfer.setDragImage(
             CardThumbnailDragged(loadedSrc, width, height, draggedThumbnailRef.current),
-            width / 2,
-            height / 2
+            dragPos[0],
+            dragPos[1]
         );
     };
 
@@ -85,6 +87,7 @@ const CardThumbnail = ({
                     type: 'cardDrag',
                     data: await getCardImageForFigma(card.largeUrl),
                     pos: [e.pageX, e.pageY],
+                    appVersion: navigator.appVersion,
                 },
             },
             '*'

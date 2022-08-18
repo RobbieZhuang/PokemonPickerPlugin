@@ -1,3 +1,5 @@
+import { dropPositionAdjustment } from "../app/utils/shared";
+
 const cardWidth = 258;
 const cardHeight = 360;
 
@@ -28,15 +30,16 @@ figma.ui.onmessage = (msg) => {
     if (msg.type === 'card') {
         addCardToCanvas(msg, figma.viewport.center.x - cardWidth / 2, figma.viewport.center.y - cardHeight / 2);
     } else if (msg.type === 'cardDrag') {
+        const adjustment = dropPositionAdjustment(msg.appVersion, cardWidth, cardHeight);
         addCardToCanvas(
             msg,
-            figma.viewport.bounds.x + msg.pos[0] / figma.viewport.zoom - cardWidth / 2,
-            figma.viewport.bounds.y + (msg.pos[1] - 48) / figma.viewport.zoom - cardHeight / 2
+            figma.viewport.bounds.x + msg.pos[0] / figma.viewport.zoom - adjustment[0],
+            figma.viewport.bounds.y + (msg.pos[1] - 48) / figma.viewport.zoom - adjustment[1]
         );
     } else if (msg.type === 'zoomRequest') {
         figma.ui.postMessage({
             zoom: figma.viewport.zoom,
             size: {width: cardWidth, height: cardHeight},
-        });
+        }); 
     }
 };
