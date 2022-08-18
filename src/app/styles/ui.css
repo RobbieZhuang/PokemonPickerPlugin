@@ -91,9 +91,6 @@ body {
     top: 0px;
     left: -1000000px;
 }
-#draggedThumbnailImg {
-    border-radius: 8px;
-}
 
 .chewtleDiv {
     display: block;

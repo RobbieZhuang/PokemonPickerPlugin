@@ -225,7 +225,7 @@ const App = ({}) => {
                 )}
             </div>
             <div id="draggedThumbnail">
-                <img id="draggedThumbnailImg" ref={draggedThumbnailImgRef}></img>
+                <img ref={draggedThumbnailImgRef}></img>
             </div>
         </>
     );
