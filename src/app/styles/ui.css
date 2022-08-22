@@ -86,6 +86,9 @@ body {
 .thumbnailDrag {
     opacity: 0;
 }
+.thumbnailNotDrag {
+    opacity: 1;
+}
 #draggedThumbnail {
     position: absolute;
     top: 0px;

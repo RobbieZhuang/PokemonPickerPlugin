@@ -4,6 +4,7 @@ import {getCardImageForFigma, getCardImage} from '../utils/cardImages';
 import SquareLoader from 'react-spinners/SquareLoader';
 import {searchCards} from '../utils/cardQueries';
 import { dragPosition } from '../utils/shared';
+// import cardBack from '../assets/card-back.png'
 
 const insertChewtle = async () => {
     const image = await getCardImageForFigma('https://images.pokemontcg.io/swsh4/38_hires.png');
@@ -49,12 +50,23 @@ const CardThumbnail = ({
             setCardsLoaded(cardsLoaded + 1);
         }
     }, [loadedSrc]);
+    const id = Math.floor(Math.random() * 1000000).toString() + 'a';
 
     const onClick = async () => {
         window.parent.postMessage(
             {
                 pluginMessage: {
-                    type: 'card',
+                    type: 'card1',
+                    id,
+                },
+            },
+            '*'
+        );
+        window.parent.postMessage(
+            {
+                pluginMessage: {
+                    type: 'card2',
+                    id,
                     data: await getCardImageForFigma(card.largeUrl),
                 },
             },
@@ -81,10 +93,24 @@ const CardThumbnail = ({
         if (droppedInIFrame) {
             return;
         }
+
         window.parent.postMessage(
             {
                 pluginMessage: {
-                    type: 'cardDrag',
+                    type: 'cardDrag1',
+                    id,
+                    pos: [e.pageX, e.pageY],
+                    appVersion: navigator.appVersion,
+                    // data: await loadingImage.getBytesAsync()
+                },
+            },
+            '*'
+        );
+        window.parent.postMessage(
+            {
+                pluginMessage: {
+                    type: 'cardDrag2',
+                    id,
                     data: await getCardImageForFigma(card.largeUrl),
                     pos: [e.pageX, e.pageY],
                     appVersion: navigator.appVersion,
@@ -96,7 +122,7 @@ const CardThumbnail = ({
 
     return (
         <img
-            className={`thumbnail ${isDragging ? 'thumbnailDrag' : ''}`}
+            className={`thumbnail ${isDragging ? 'thumbnailDrag' : 'thumbnailNotDrag'}`}
             src={loadedSrc}
             onClick={onClick}
             onDragStart={onDragStart}
