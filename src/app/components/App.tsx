@@ -36,10 +36,6 @@ const CardThumbnail = ({
     const [isDragging, setIsDragging] = React.useState(false);
     const id = generateCardId();
 
-    const worker = new Worker(
-        URL.createObjectURL(new Blob(['(' + getCardImageForFigmaWorker.toString() + ')()'], {type: 'text/javascript'}))
-    );
-
     React.useEffect(() => {
         const controller = new AbortController();
         const fetchImage = async () => {
@@ -114,6 +110,11 @@ const CardThumbnail = ({
         const pageXY = [e.pageX, e.pageY];
         postMessageToFigma('cardDragTemp', id, loadedBuffer, pageXY, navigator.appVersion);
 
+        const worker = new Worker(
+            URL.createObjectURL(
+                new Blob(['(' + getCardImageForFigmaWorker.toString() + ')()'], {type: 'text/javascript'})
+            )
+        );
         worker.addEventListener('message', function (response) {
             postMessageToFigma('cardDragHighRes', id, response.data.imgBuffer, pageXY, navigator.appVersion);
             worker.removeEventListener('message', () => {});
