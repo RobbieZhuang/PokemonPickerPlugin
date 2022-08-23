@@ -1,14 +1,46 @@
 import * as React from 'react';
 import '../styles/ui.css';
-import {getCardImageForFigma, getCardImage, getCardImageForFigmaWorker} from '../utils/cardImages';
+import {getCardData, getCardImageForFigmaWorker} from '../utils/cardImages';
 import SquareLoader from 'react-spinners/SquareLoader';
 import {searchCards} from '../utils/cardQueries';
 import {dragPosition} from '../utils/shared';
 
 const insertChewtle = async () => {
-    const image = await getCardImageForFigma('https://images.pokemontcg.io/swsh4/38_hires.png');
-    window.parent.postMessage({pluginMessage: {type: 'card', data: image}}, '*');
+    const id = generateCardId();
+    const {imageBuffer} = await getCardData(new Request('https://images.pokemontcg.io/swsh4/38.png', {}));
+    insertCardOntoCanvas('https://images.pokemontcg.io/swsh4/38_hires.png', 'click', id, imageBuffer, null);
 };
+
+function insertCardOntoCanvas(url, type, id, data, pos) {
+    function postMessageToFigma(type: string, id: string, data: ArrayBuffer, pos: []) {
+        window.parent.postMessage(
+            {
+                pluginMessage: {
+                    type,
+                    id,
+                    data,
+                    pos,
+                    appVersion: navigator.appVersion,
+                },
+            },
+            '*'
+        );
+    }
+    // Add temp
+    postMessageToFigma(type + 'Temp', id, data, pos);
+
+    // Add high res asynchronously
+    const worker = new Worker(
+        URL.createObjectURL(new Blob(['(' + getCardImageForFigmaWorker.toString() + ')()'], {type: 'text/javascript'}))
+    );
+    worker.addEventListener('message', function (response) {
+        postMessageToFigma(type + 'HighRes', id, response.data.imgBuffer, pos);
+        worker.removeEventListener('message', () => {});
+    });
+    worker.postMessage({
+        cardUrl: url,
+    });
+}
 
 function CardThumbnailDragged(cardImg, width, height, draggedThumbnailImage): Element {
     draggedThumbnailImage.src = cardImg;
@@ -19,7 +51,7 @@ function CardThumbnailDragged(cardImg, width, height, draggedThumbnailImage): El
 }
 
 function generateCardId() {
-    return Math.floor(Math.random() * 1000000).toString() + 'a';
+    return Math.floor(Math.random() * 1000000).toString() + 'chewtle';
 }
 
 const CardThumbnail = ({
@@ -39,8 +71,7 @@ const CardThumbnail = ({
     React.useEffect(() => {
         const controller = new AbortController();
         const fetchImage = async () => {
-            const {imageUrl, imageBuffer} = await getCardImage(new Request(card.smallUrl, {signal: controller.signal}));
-            // Crashing Figma in dev :(
+            const {imageUrl, imageBuffer} = await getCardData(new Request(card.smallUrl, {signal: controller.signal}));
             setLoadedBuffer(imageBuffer);
             setLoadedSrc(imageUrl);
         };
@@ -50,27 +81,8 @@ const CardThumbnail = ({
         };
     }, [card]);
 
-    const onClick = async () => {
-        window.parent.postMessage(
-            {
-                pluginMessage: {
-                    type: 'cardClickTemp',
-                    id,
-                    data: loadedBuffer,
-                },
-            },
-            '*'
-        );
-        window.parent.postMessage(
-            {
-                pluginMessage: {
-                    type: 'cardClickHighRes',
-                    id,
-                    data: await getCardImageForFigma(card.largeUrl),
-                },
-            },
-            '*'
-        );
+    const onClick = () => {
+        insertCardOntoCanvas(card.largeUrl, 'click', id, loadedBuffer, null);
     };
 
     const onDragStart = async (e) => {
@@ -87,41 +99,14 @@ const CardThumbnail = ({
         );
     };
 
-    function postMessageToFigma(type, id, data, pos, appVersion) {
-        window.parent.postMessage(
-            {
-                pluginMessage: {
-                    type,
-                    id,
-                    data,
-                    pos,
-                    appVersion,
-                },
-            },
-            '*'
-        );
-    }
-
-    const onDragEnd = async (e) => {
+    const onDragEnd = (e) => {
         setIsDragging(false);
         if (droppedInIFrame) {
             return;
         }
-        const pageXY = [e.pageX, e.pageY];
-        postMessageToFigma('cardDragTemp', id, loadedBuffer, pageXY, navigator.appVersion);
+        const mousePosition = [e.pageX, e.pageY];
 
-        const worker = new Worker(
-            URL.createObjectURL(
-                new Blob(['(' + getCardImageForFigmaWorker.toString() + ')()'], {type: 'text/javascript'})
-            )
-        );
-        worker.addEventListener('message', function (response) {
-            postMessageToFigma('cardDragHighRes', id, response.data.imgBuffer, pageXY, navigator.appVersion);
-            worker.removeEventListener('message', () => {});
-        });
-        worker.postMessage({
-            cardUrl: card.largeUrl,
-        });
+        insertCardOntoCanvas(card.largeUrl, 'drag', id, loadedBuffer, mousePosition);
     };
 
     return (

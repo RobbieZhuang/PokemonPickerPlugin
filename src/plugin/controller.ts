@@ -45,16 +45,16 @@ function addCardToCanvas(cardId, img) {
 }
 
 figma.ui.onmessage = (msg) => {
-    if (msg.type === 'cardClickTemp') {
+    if (msg.type === 'clickTemp') {
         addTempToCanvas(
             msg.id,
             msg.data,
             figma.viewport.center.x - cardWidth / 2,
             figma.viewport.center.y - cardHeight / 2
         );
-    } else if (msg.type === 'cardClickHighRes') {
+    } else if (msg.type === 'clickHighRes') {
         addCardToCanvas(msg.id, msg.data);
-    } else if (msg.type === 'cardDragTemp') {
+    } else if (msg.type === 'dragTemp') {
         const adjustment = dropPositionAdjustment(msg.appVersion, cardWidth, cardHeight);
         addTempToCanvas(
             msg.id,
@@ -62,7 +62,7 @@ figma.ui.onmessage = (msg) => {
             figma.viewport.bounds.x + msg.pos[0] / figma.viewport.zoom - adjustment[0],
             figma.viewport.bounds.y + (msg.pos[1] - 48) / figma.viewport.zoom - adjustment[1]
         );
-    } else if (msg.type === 'cardDragHighRes') {
+    } else if (msg.type === 'dragHighRes') {
         addCardToCanvas(msg.id, msg.data);
     } else if (msg.type === 'zoomRequest') {
         figma.ui.postMessage({

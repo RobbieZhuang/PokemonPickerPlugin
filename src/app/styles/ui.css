@@ -54,6 +54,7 @@ body {
     grid-template-columns: repeat(3, minmax(0px, 140px));
     grid-gap: 16px;
     margin: calc(var(--padding-size));
+    user-select: none;
 }
 .error {
     display: block;
