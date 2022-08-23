@@ -27,10 +27,14 @@ function addTempToCanvas(cardId, img, x, y) {
     shape.fills = newFills;
 
     addedShapes[cardId] = shape;
+    shape.setPluginData('cardId', cardId);
 }
 
-function addCardToCanvas(cardId, img) {
-    // todo: check that the card is still on the canvas (isn't deleted for some reason)
+function addHighResToCanvas(cardId, img) {
+    const node = addedShapes[cardId];
+    if (node.removed) {
+        return;
+    }
 
     const image = figma.createImage(new Uint8Array(img));
     const newPaint = {
@@ -38,10 +42,9 @@ function addCardToCanvas(cardId, img) {
         scaleMode: 'FIT',
         imageHash: image.hash,
     };
-    const shape = addedShapes[cardId];
     const newFills = [];
     newFills.push(newPaint);
-    shape.fills = newFills;
+    node.fills = newFills;
 }
 
 figma.ui.onmessage = (msg) => {
@@ -52,8 +55,6 @@ figma.ui.onmessage = (msg) => {
             figma.viewport.center.x - cardWidth / 2,
             figma.viewport.center.y - cardHeight / 2
         );
-    } else if (msg.type === 'clickHighRes') {
-        addCardToCanvas(msg.id, msg.data);
     } else if (msg.type === 'dragTemp') {
         const adjustment = dropPositionAdjustment(msg.appVersion, cardWidth, cardHeight);
         addTempToCanvas(
@@ -62,8 +63,8 @@ figma.ui.onmessage = (msg) => {
             figma.viewport.bounds.x + msg.pos[0] / figma.viewport.zoom - adjustment[0],
             figma.viewport.bounds.y + (msg.pos[1] - 48) / figma.viewport.zoom - adjustment[1]
         );
-    } else if (msg.type === 'dragHighRes') {
-        addCardToCanvas(msg.id, msg.data);
+    } else if (msg.type === 'clickHighRes' || msg.type === 'dragHighRes') {
+        addHighResToCanvas(msg.id, msg.data);
     } else if (msg.type === 'zoomRequest') {
         figma.ui.postMessage({
             zoom: figma.viewport.zoom,

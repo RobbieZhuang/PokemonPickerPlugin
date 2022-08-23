@@ -170,8 +170,8 @@ const App = ({}) => {
     }, []);
 
     const onClick = (e) => {
-        if (e.detail === 5) {
-            setShowChewtle(true);
+        if (e.detail === 3) {
+            setShowChewtle(!showChewtle);
         }
     };
 
