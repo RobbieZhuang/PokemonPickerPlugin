@@ -54,8 +54,8 @@ figma.ui.onmessage = (msg) => {
         addTempToCanvas(
             msg.id,
             msg.data,
-            figma.viewport.center.x - cardWidth / 2 + (offset * offsetCount),
-            figma.viewport.center.y - cardHeight / 2 + (offset * offsetCount)
+            figma.viewport.center.x - cardWidth / 2 + offset * offsetCount,
+            figma.viewport.center.y - cardHeight / 2 + offset * offsetCount
         );
         offsetCount++;
     } else if (msg.type === 'dragTemp') {
