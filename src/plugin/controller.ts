@@ -2,6 +2,8 @@ import {dropPositionAdjustment} from '../app/utils/shared';
 
 const cardWidth = 258;
 const cardHeight = 360;
+const offset = 16;
+let offsetCount = 0;
 
 figma.showUI(__html__);
 figma.ui.resize(500, 512);
@@ -20,14 +22,15 @@ function addTempToCanvas(cardId, img, x, y) {
 
     const shape = figma.createRectangle();
     shape.resize(cardWidth, cardHeight);
-    shape.x = x;
-    shape.y = y;
+    shape.x = x + (offset * offsetCount);
+    shape.y = y + (offset * offsetCount);
     figma.currentPage.appendChild(shape);
     figma.currentPage.selection = [shape];
     shape.fills = newFills;
 
     addedShapes[cardId] = shape;
     shape.setPluginData('cardId', cardId);
+    offsetCount++;
 }
 
 function addHighResToCanvas(cardId, img) {
