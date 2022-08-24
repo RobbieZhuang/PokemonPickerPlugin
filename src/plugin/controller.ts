@@ -22,15 +22,14 @@ function addTempToCanvas(cardId, img, x, y) {
 
     const shape = figma.createRectangle();
     shape.resize(cardWidth, cardHeight);
-    shape.x = x + (offset * offsetCount);
-    shape.y = y + (offset * offsetCount);
+    shape.x = x;
+    shape.y = y;
     figma.currentPage.appendChild(shape);
     figma.currentPage.selection = [shape];
     shape.fills = newFills;
 
     addedShapes[cardId] = shape;
     shape.setPluginData('cardId', cardId);
-    offsetCount++;
 }
 
 function addHighResToCanvas(cardId, img) {
@@ -55,9 +54,10 @@ figma.ui.onmessage = (msg) => {
         addTempToCanvas(
             msg.id,
             msg.data,
-            figma.viewport.center.x - cardWidth / 2,
-            figma.viewport.center.y - cardHeight / 2
+            figma.viewport.center.x - cardWidth / 2 + (offset * offsetCount),
+            figma.viewport.center.y - cardHeight / 2 + (offset * offsetCount)
         );
+        offsetCount++;
     } else if (msg.type === 'dragTemp') {
         const adjustment = dropPositionAdjustment(msg.appVersion, cardWidth, cardHeight);
         addTempToCanvas(
