@@ -20,3 +20,4 @@ This repo is using:
 -   TypeScript
 -   Prettier precommit hook
 -   S/O to https://github.com/nirsky/figma-plugin-react-template for the React template!
+-   Also huge S/O to https://pokemontcg.io/ for the amazing card API! Without that project, this one wouldn't be possible :) 
