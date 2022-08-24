@@ -1,14 +1,46 @@
 import * as React from 'react';
 import '../styles/ui.css';
-import {getCardImageForFigma, getCardImage} from '../utils/cardImages';
+import {getCardData, getCardImageForFigmaWorker} from '../utils/cardImages';
 import SquareLoader from 'react-spinners/SquareLoader';
 import {searchCards} from '../utils/cardQueries';
-import { dragPosition } from '../utils/shared';
+import {dragPosition} from '../utils/shared';
 
 const insertChewtle = async () => {
-    const image = await getCardImageForFigma('https://images.pokemontcg.io/swsh4/38_hires.png');
-    window.parent.postMessage({pluginMessage: {type: 'card', data: image}}, '*');
+    const id = generateCardId();
+    const {imageBuffer} = await getCardData(new Request('https://images.pokemontcg.io/swsh4/38.png', {}));
+    insertCardOntoCanvas('https://images.pokemontcg.io/swsh4/38_hires.png', 'click', id, imageBuffer, null);
 };
+
+function insertCardOntoCanvas(url, type, id, data, pos) {
+    function postMessageToFigma(type: string, id: string, data: ArrayBuffer, pos: []) {
+        window.parent.postMessage(
+            {
+                pluginMessage: {
+                    type,
+                    id,
+                    data,
+                    pos,
+                    appVersion: navigator.appVersion,
+                },
+            },
+            '*'
+        );
+    }
+    // Add temp
+    postMessageToFigma(type + 'Temp', id, data, pos);
+
+    // Add high res asynchronously
+    const worker = new Worker(
+        URL.createObjectURL(new Blob(['(' + getCardImageForFigmaWorker.toString() + ')()'], {type: 'text/javascript'}))
+    );
+    worker.addEventListener('message', function (response) {
+        postMessageToFigma(type + 'HighRes', id, response.data.imgBuffer, pos);
+        worker.removeEventListener('message', () => {});
+    });
+    worker.postMessage({
+        cardUrl: url,
+    });
+}
 
 function CardThumbnailDragged(cardImg, width, height, draggedThumbnailImage): Element {
     draggedThumbnailImage.src = cardImg;
@@ -18,25 +50,30 @@ function CardThumbnailDragged(cardImg, width, height, draggedThumbnailImage): El
     return draggedThumbnailImage.parentNode;
 }
 
+function generateCardId() {
+    return Math.floor(Math.random() * 1000000).toString() + 'chewtle';
+}
+
 const CardThumbnail = ({
     card,
     canvasZoomLevel,
     canvasCardWidth,
     canvasCardHeight,
-    cardsLoaded,
-    setCardsLoaded,
     droppedInIFrame,
     setDroppedInIFrame,
     draggedThumbnailRef,
 }) => {
     const [loadedSrc, setLoadedSrc] = React.useState(null);
+    const [loadedBuffer, setLoadedBuffer] = React.useState(null);
     const [isDragging, setIsDragging] = React.useState(false);
+    const id = generateCardId();
 
     React.useEffect(() => {
         const controller = new AbortController();
         const fetchImage = async () => {
-            const imageObjectUrl = await getCardImage(new Request(card.smallUrl, {signal: controller.signal}));
-            setLoadedSrc(imageObjectUrl);
+            const {imageUrl, imageBuffer} = await getCardData(new Request(card.smallUrl, {signal: controller.signal}));
+            setLoadedBuffer(imageBuffer);
+            setLoadedSrc(imageUrl);
         };
         fetchImage();
         return () => {
@@ -44,22 +81,8 @@ const CardThumbnail = ({
         };
     }, [card]);
 
-    React.useEffect(() => {
-        if (loadedSrc !== null) {
-            setCardsLoaded(cardsLoaded + 1);
-        }
-    }, [loadedSrc]);
-
-    const onClick = async () => {
-        window.parent.postMessage(
-            {
-                pluginMessage: {
-                    type: 'card',
-                    data: await getCardImageForFigma(card.largeUrl),
-                },
-            },
-            '*'
-        );
+    const onClick = () => {
+        insertCardOntoCanvas(card.largeUrl, 'click', id, loadedBuffer, null);
     };
 
     const onDragStart = async (e) => {
@@ -76,27 +99,19 @@ const CardThumbnail = ({
         );
     };
 
-    const onDragEnd = async (e) => {
+    const onDragEnd = (e) => {
         setIsDragging(false);
         if (droppedInIFrame) {
             return;
         }
-        window.parent.postMessage(
-            {
-                pluginMessage: {
-                    type: 'cardDrag',
-                    data: await getCardImageForFigma(card.largeUrl),
-                    pos: [e.pageX, e.pageY],
-                    appVersion: navigator.appVersion,
-                },
-            },
-            '*'
-        );
+        const mousePosition = [e.pageX, e.pageY];
+
+        insertCardOntoCanvas(card.largeUrl, 'drag', id, loadedBuffer, mousePosition);
     };
 
     return (
         <img
-            className={`thumbnail ${isDragging ? 'thumbnailDrag' : ''}`}
+            className={`thumbnail ${isDragging ? 'thumbnailDrag' : 'thumbnailNotDrag'}`}
             src={loadedSrc}
             onClick={onClick}
             onDragStart={onDragStart}
@@ -107,7 +122,6 @@ const CardThumbnail = ({
 
 const App = ({}) => {
     const [cardInfos, setCardInfos] = React.useState([]);
-    const [cardsLoaded, setCardsLoaded] = React.useState(0);
     const [canvasZoomLevel, setCanvasZoomLevel] = React.useState(0);
     const [canvasCardWidth, setCanvasCardWidth] = React.useState(0);
     const [canvasCardHeight, setCanvasCardHeight] = React.useState(0);
@@ -129,7 +143,6 @@ const App = ({}) => {
                 results = await searchCards(query.trim());
             }
             setCardInfos(() => results);
-            setCardsLoaded(0);
             setLoading(false);
         }
     };
@@ -150,7 +163,7 @@ const App = ({}) => {
         } else if (cardInfos.length === 0) {
             setStatusMessage('No results found');
         }
-    }, [cardInfos, cardsLoaded, showChewtle]);
+    }, [cardInfos, showChewtle]);
 
     React.useEffect(() => {
         setStatusMessage('');
@@ -158,7 +171,7 @@ const App = ({}) => {
 
     const onClick = (e) => {
         if (e.detail === 5) {
-            setShowChewtle(true);
+            setShowChewtle(!showChewtle);
         }
     };
 
@@ -208,8 +221,6 @@ const App = ({}) => {
                                         canvasZoomLevel={canvasZoomLevel}
                                         canvasCardWidth={canvasCardWidth}
                                         canvasCardHeight={canvasCardHeight}
-                                        cardsLoaded={cardsLoaded}
-                                        setCardsLoaded={setCardsLoaded}
                                         droppedInIFrame={droppedInIFrame}
                                         setDroppedInIFrame={setDroppedInIFrame}
                                         draggedThumbnailRef={draggedThumbnailImgRef}
