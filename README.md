@@ -8,7 +8,7 @@ Organizing your binders? Building a deck? Sharing your cards with friends? Searc
 
 ## Quickstart
 
--   Run `npm` to install dependencies.
+-   Run `npm i` to install dependencies.
 -   Run `npm run watch` to start webpack in watch mode.
 -   Open `Figma` -> `Plugins` -> `Development` -> `Import plugin from manifest...` and choose `manifest.json` file from this repo.
 

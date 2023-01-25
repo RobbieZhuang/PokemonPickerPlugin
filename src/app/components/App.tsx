@@ -68,6 +68,8 @@ const CardThumbnail = ({
     const [isDragging, setIsDragging] = React.useState(false);
     const id = generateCardId();
 
+    const cardRef = React.useRef();
+
     React.useEffect(() => {
         const controller = new AbortController();
         const fetchImage = async () => {
@@ -88,10 +90,21 @@ const CardThumbnail = ({
     const onDragStart = async (e) => {
         setDroppedInIFrame(false);
         setIsDragging(true);
+        console.log('rbz', e);
+        console.log(cardRef.current.getBoundingClientRect());
+
+        // Coordinates in plugin scope!
+        console.log('X:', e.clientX - cardRef.current.getBoundingClientRect().x);
+        console.log('Y:', e.clientY - cardRef.current.getBoundingClientRect().y);
+
         const width = canvasCardWidth * canvasZoomLevel;
         const height = canvasCardHeight * canvasZoomLevel;
+        const xRatio =
+            (e.clientX - cardRef.current.getBoundingClientRect().x) / cardRef.current.getBoundingClientRect().width;
+        const yRatio =
+            (e.clientY - cardRef.current.getBoundingClientRect().y) / cardRef.current.getBoundingClientRect().height;
         // loadedSrc depends on the cache being enabled
-        const dragPos = dragPosition(width, height);
+        const dragPos = dragPosition(width, height, xRatio, yRatio);
         e.dataTransfer.setDragImage(
             CardThumbnailDragged(loadedSrc, width, height, draggedThumbnailRef.current),
             dragPos[0],
@@ -111,6 +124,7 @@ const CardThumbnail = ({
 
     return (
         <img
+            ref={cardRef}
             className={`thumbnail ${isDragging ? 'thumbnailDrag' : 'thumbnailNotDrag'}`}
             src={loadedSrc}
             onClick={onClick}
